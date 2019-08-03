@@ -1,0 +1,1 @@
+# ht-app-firebase-functions
