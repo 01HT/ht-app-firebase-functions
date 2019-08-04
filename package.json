@@ -1,0 +1,14 @@
+{
+  "name": "@01ht/ht-app-firebase-functions",
+  "version": "1.0.0",
+  "repository": "01ht/ht-app-firebase-functions",
+  "author": "01ht Ltd",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@01ht/ht-app-browser-not-supported":
+      "github:01ht/ht-app-browser-not-supported",
+    "express": "^4.17.1",
+    "node-fetch": "^2.6.0",
+    "url": "^0.11.0"
+  }
+}
