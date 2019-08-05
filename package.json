@@ -5,10 +5,18 @@
   "author": "01ht Ltd",
   "license": "UNLICENSED",
   "dependencies": {
-    "@01ht/ht-app-browser-not-supported":
-      "github:01ht/ht-app-browser-not-supported",
+    "@01ht/ht-app-browser-not-supported": "github:01ht/ht-app-browser-not-supported",
     "express": "^4.17.1",
     "node-fetch": "^2.6.0",
     "url": "^0.11.0"
+  },
+  "devDependencies": {
+    "tslint": "^5.17.0",
+    "typescript": "^3.5.1"
+  },
+  "scripts": {
+    "lint": "./node_modules/.bin/tslint -p tslint.json",
+    "build": "./node_modules/.bin/tsc",
+    "clear": "if exist lib ( rmdir /s/q lib )"
   }
 }
