@@ -4,7 +4,15 @@ const fetch = require("node-fetch");
 const url = require("url");
 import { browserNotSupported } from "@01ht/ht-app-browser-not-supported";
 
-function middleware(pwashell, appName, domain, svg, ico32, ico64) {
+function middleware(
+  pwashell,
+  appName,
+  domain,
+  cloudinaryURL,
+  svg,
+  ico32,
+  ico64
+) {
   const generateUrl = request => {
     return url.format({
       protocol: "https",
@@ -53,7 +61,9 @@ function middleware(pwashell, appName, domain, svg, ico32, ico64) {
           });
       } else {
         if (isIE(userAgent)) {
-          res.send(browserNotSupported(appName, ico64, ico32, svg));
+          res.send(
+            browserNotSupported(appName, cloudinaryURL, ico64, ico32, svg)
+          );
         } else {
           res.send(pwashell);
         }
