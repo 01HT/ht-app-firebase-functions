@@ -11,7 +11,8 @@ function middleware(
   cloudinaryURL,
   svg,
   ico32,
-  ico64
+  ico64,
+  IESupport
 ) {
   const generateUrl = request => {
     return url.format({
@@ -60,7 +61,7 @@ function middleware(
             throw new Error(err);
           });
       } else {
-        if (isIE(userAgent)) {
+        if (isIE(userAgent) && IESupport === undefined) {
           res.send(
             browserNotSupported(appName, cloudinaryURL, ico64, ico32, svg)
           );
