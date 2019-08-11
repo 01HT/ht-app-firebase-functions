@@ -82,7 +82,7 @@ function createApp(pwashell) {
         };
 
         if (ieOld || (ie11 && !ie11_support)) {
-          browserNotSupported(browserNotSupportedParams);
+          res.send(browserNotSupported(browserNotSupportedParams));
         } else {
           res.send(pwashell);
         }

@@ -75,7 +75,7 @@ function createApp(pwashell) {
                     ie11_support: ie11_support
                 };
                 if (ieOld || (ie11 && !ie11_support)) {
-                    ht_app_browser_not_supported_1.browserNotSupported(browserNotSupportedParams);
+                    res.send(ht_app_browser_not_supported_1.browserNotSupported(browserNotSupportedParams));
                 }
                 else {
                     res.send(pwashell);
