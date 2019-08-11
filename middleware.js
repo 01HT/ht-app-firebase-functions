@@ -1,30 +1,42 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const firebase_functions_1 = require("firebase-functions");
 const express = require("express");
 const fetch = require("node-fetch");
 const url = require("url");
 const ht_app_browser_not_supported_1 = require("@01ht/ht-app-browser-not-supported");
-function middleware(pwashell, appName, domain, cloudinaryURL, svg, ico32, ico64, IESupport) {
-    const generateUrl = request => {
-        return url.format({
-            protocol: "https",
-            host: domain,
-            pathname: request.originalUrl
-        });
-    };
-    const checkForBots = userAgent => {
-        const botList = "googlebot|yandex|bingbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|rogerbot|linkedinbot|embedly|quora link preview|showyoubot|outbrain|pinterest|vkShare|TelegramBot|WhatsApp|W3C_Validator|slackbot|facebot|developers.google.com/+/web/snippet/".toLowerCase();
-        if (userAgent.toLowerCase().search(botList) !== -1)
-            return true;
-        return false;
-    };
-    const isIE = userAgent => {
-        const msie = userAgent.indexOf("MSIE "); // IE 10 or older
-        const trident = userAgent.indexOf("Trident/"); // IE 11
-        return msie > 0 || trident > 0;
-    };
+const envConfig = firebase_functions_1.config();
+const appName = envConfig.app_config.name;
+const domain = envConfig.app_config.domain;
+const cloudinaryURL = `${envConfig.cloudinary.origin}/${envConfig.cloudinary.cloud_name}`;
+const svg = envConfig.app_config.logo.svg;
+const ico32 = envConfig.app_config.logo.ico32;
+const ico64 = envConfig.app_config.logo.ico64;
+const ie11_support = envConfig.app_config.ie11_support ? true : false;
+const renderUrl = "https://render-tron.appspot.com/render";
+function generateUrl(request) {
+    return url.format({
+        protocol: "https",
+        host: domain,
+        pathname: request.originalUrl
+    });
+}
+function checkForBots(userAgent) {
+    const botList = "googlebot|yandex|bingbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|rogerbot|linkedinbot|embedly|quora link preview|showyoubot|outbrain|pinterest|vkShare|TelegramBot|WhatsApp|W3C_Validator|slackbot|facebot|developers.google.com/+/web/snippet/".toLowerCase();
+    if (userAgent.toLowerCase().search(botList) !== -1)
+        return true;
+    return false;
+}
+function isIE11(userAgent) {
+    const trident = userAgent.indexOf("Trident/");
+    return trident > 0;
+}
+function isIE10OrOlder(userAgent) {
+    const msie = userAgent.indexOf("MSIE ");
+    return msie > 0;
+}
+function createApp(pwashell) {
     const app = express();
-    const renderUrl = "https://render-tron.appspot.com/render";
     app.get("*", (req, res) => {
         try {
             const userAgent = req.headers["user-agent"];
@@ -52,8 +64,18 @@ function middleware(pwashell, appName, domain, cloudinaryURL, svg, ico32, ico64,
                 });
             }
             else {
-                if (isIE(userAgent) && IESupport === undefined) {
-                    res.send(ht_app_browser_not_supported_1.browserNotSupported(appName, cloudinaryURL, ico64, ico32, svg));
+                const ie11 = isIE11(userAgent);
+                const ieOld = isIE10OrOlder(userAgent);
+                const browserNotSupportedParams = {
+                    appName: appName,
+                    cloudinaryURL: cloudinaryURL,
+                    ico64: ico64,
+                    ico32: ico32,
+                    svg: svg,
+                    ie11_support: ie11_support
+                };
+                if (ieOld || (ie11 && !ie11_support)) {
+                    ht_app_browser_not_supported_1.browserNotSupported(browserNotSupportedParams);
                 }
                 else {
                     res.send(pwashell);
@@ -73,6 +95,9 @@ function middleware(pwashell, appName, domain, cloudinaryURL, svg, ico32, ico64,
         }
     });
     return app;
+}
+function middleware(pwashell) {
+    return firebase_functions_1.https.onRequest(createApp(pwashell));
 }
 exports.middleware = middleware;
 //# sourceMappingURL=middleware.js.map
