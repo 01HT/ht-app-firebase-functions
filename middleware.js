@@ -53,11 +53,11 @@ function createApp(pwashell) {
                 const targetUrl = generateUrl(req);
                 targetUrl.replace("robots.txt", "");
                 const response = await page.goto(targetUrl, {
-                    waitUntil: "domcontentloaded"
+                    waitUntil: "load"
                 });
+                const html = await page.content();
                 if (response.status() === 404)
                     res.status(404);
-                const html = await page.content();
                 res.set("Cache-Control", "public, max-age=300, s-maxage=600");
                 res.set("Vary", "User-Agent");
                 res.send(html);
@@ -90,7 +90,7 @@ function createApp(pwashell) {
     return app;
 }
 function middleware(pwashell) {
-    return functions.runWith({ memory: '1GB' }).https.onRequest(createApp(pwashell));
+    return functions.runWith({ memory: '2GB' }).https.onRequest(createApp(pwashell));
 }
 exports.middleware = middleware;
 //# sourceMappingURL=middleware.js.map
