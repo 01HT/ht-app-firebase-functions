@@ -1,5 +1,6 @@
 "use strict";
-import { https, config } from "firebase-functions";
+const functions = require("firebase-functions");
+import { config } from "firebase-functions";
 const express = require("express");
 const puppeteer = require("puppeteer");
 const url = require("url");
@@ -50,7 +51,10 @@ function createApp(pwashell) {
       const path = url.parse(req.url).pathname;
       if (path === "/404") res.status(404);
       if (botResult) {
-        const browser = await puppeteer.launch({ headless: true });
+        const browser = await puppeteer.launch({
+          headless: true,
+          args: ["--no-sandbox", "--disable-setuid-sandbox"]
+        });
         const page = await browser.newPage();
         const targetUrl = generateUrl(req);
         targetUrl.replace("robots.txt", "");
@@ -91,7 +95,7 @@ function createApp(pwashell) {
 }
 
 function middleware(pwashell) {
-  return https.onRequest(createApp(pwashell));
+  return functions.runWith({ memory: '1GB' }).https.onRequest(createApp(pwashell));
 }
 
 export { middleware };

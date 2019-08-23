@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const functions = require("firebase-functions");
 const firebase_functions_1 = require("firebase-functions");
 const express = require("express");
 const puppeteer = require("puppeteer");
@@ -44,7 +45,10 @@ function createApp(pwashell) {
             if (path === "/404")
                 res.status(404);
             if (botResult) {
-                const browser = await puppeteer.launch({ headless: true });
+                const browser = await puppeteer.launch({
+                    headless: true,
+                    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+                });
                 const page = await browser.newPage();
                 const targetUrl = generateUrl(req);
                 targetUrl.replace("robots.txt", "");
@@ -86,7 +90,7 @@ function createApp(pwashell) {
     return app;
 }
 function middleware(pwashell) {
-    return firebase_functions_1.https.onRequest(createApp(pwashell));
+    return functions.runWith({ memory: '1GB' }).https.onRequest(createApp(pwashell));
 }
 exports.middleware = middleware;
 //# sourceMappingURL=middleware.js.map
