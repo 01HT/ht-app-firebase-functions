@@ -60,15 +60,16 @@ function createApp(pwashell) {
                     const promise = new Promise(resolve => {
                         setTimeout(() => {
                             resolve();
-                        }, 15000);
+                        }, 25000);
                     });
                     return promise;
                 });
                 const html = await page.content();
                 if (response.status() === 404)
                     res.status(404);
-                res.set("Cache-Control", "public, max-age=300, s-maxage=600");
-                res.set("Vary", "User-Agent");
+                console.log(response.status());
+                // res.set("Cache-Control", "public, max-age=300, s-maxage=600");
+                // res.set("Vary", "User-Agent");
                 res.send(html);
                 await browser.close();
             }
