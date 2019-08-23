@@ -59,7 +59,7 @@ function createApp(pwashell) {
         const targetUrl = generateUrl(req);
         targetUrl.replace("robots.txt", "");
         const response = await page.goto(targetUrl, {
-          waitUntil: "networkidle0"
+          waitUntil: "domcontentloaded"
         });
         if(response.status() === 404) res.status(404);
         const html = await page.content();
