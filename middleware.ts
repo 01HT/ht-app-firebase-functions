@@ -59,7 +59,16 @@ function createApp(pwashell) {
         const targetUrl = generateUrl(req);
         targetUrl.replace("robots.txt", "");
         const response = await page.goto(targetUrl, {
-          waitUntil: "load"
+          waitUntil: "domcontentloaded"
+        });
+        // await page.waitForSelector("h1");
+        await page.evaluate(() => {
+          const promise = new Promise(resolve => {
+            setTimeout(() => {
+              resolve();
+            }, 15000);
+          });
+          return promise;
         });
         const html = await page.content();
         if (response.status() === 404) res.status(404);
@@ -95,7 +104,9 @@ function createApp(pwashell) {
 }
 
 function middleware(pwashell) {
-  return functions.runWith({ memory: '2GB' }).https.onRequest(createApp(pwashell));
+  return functions
+    .runWith({ memory: "2GB" })
+    .https.onRequest(createApp(pwashell));
 }
 
 export { middleware };
