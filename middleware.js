@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const firebase_functions_1 = require("firebase-functions");
 const express = require("express");
-const fetch = require("node-fetch");
+const puppeteer_1 = require("puppeteer");
 const url = require("url");
 const ht_app_browser_not_supported_1 = require("@01ht/ht-app-browser-not-supported");
 const envConfig = firebase_functions_1.config();
@@ -13,7 +13,6 @@ const svg = envConfig.app_config.logo.svg;
 const ico32 = envConfig.app_config.logo.ico32;
 const ico64 = envConfig.app_config.logo.ico64;
 const ie11_support = envConfig.app_config.ie11_support ? true : false;
-const renderUrl = "https://render-tron.appspot.com/render";
 function generateUrl(request) {
     return url.format({
         protocol: "https",
@@ -37,7 +36,7 @@ function isIE10OrOlder(userAgent) {
 }
 function createApp(pwashell) {
     const app = express();
-    app.get("*", (req, res) => {
+    app.get("*", async (req, res) => {
         try {
             const userAgent = req.headers["user-agent"];
             const botResult = checkForBots(userAgent);
@@ -45,23 +44,20 @@ function createApp(pwashell) {
             if (path === "/404")
                 res.status(404);
             if (botResult) {
+                const browser = await puppeteer_1.default.launch({ headless: true });
+                const page = await browser.newPage();
                 const targetUrl = generateUrl(req);
                 targetUrl.replace("robots.txt", "");
-                // console.log(`${renderUrl}/${targetUrl}?wc-inject-shadydom=true`);
-                fetch(`${renderUrl}/${targetUrl}?wc-inject-shadydom=true`)
-                    .then(function (fetchResponse) {
-                    if (fetchResponse.status === 404)
-                        res.status(404);
-                    return fetchResponse.text();
-                })
-                    .then(function (body) {
-                    res.set("Cache-Control", "public, max-age=300, s-maxage=600");
-                    res.set("Vary", "User-Agent");
-                    res.send(body.toString());
-                })
-                    .catch(err => {
-                    throw new Error(err);
+                const response = await page.goto(targetUrl, {
+                    waitUntil: "networkidle0"
                 });
+                if (response.status() === 404)
+                    res.status(404);
+                const html = await page.content();
+                res.set("Cache-Control", "public, max-age=300, s-maxage=600");
+                res.set("Vary", "User-Agent");
+                res.send(html);
+                await browser.close();
             }
             else {
                 const ie11 = isIE11(userAgent);
@@ -80,13 +76,6 @@ function createApp(pwashell) {
                 else {
                     res.send(pwashell);
                 }
-                // fetch(`https://01.ht/app.html`)
-                //   .then(function(res) {
-                //     return res.text();
-                //   })
-                //   .then(function(body) {
-                //     res.send(body.toString());
-                //   });
             }
         }
         catch (err) {
