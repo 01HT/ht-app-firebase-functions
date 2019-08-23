@@ -1,7 +1,7 @@
 "use strict";
 import { https, config } from "firebase-functions";
 const express = require("express");
-import puppeteer from "puppeteer";
+const puppeteer = require("puppeteer");
 const url = require("url");
 import { browserNotSupported } from "@01ht/ht-app-browser-not-supported";
 

@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const firebase_functions_1 = require("firebase-functions");
 const express = require("express");
-const puppeteer_1 = require("puppeteer");
+const puppeteer = require("puppeteer");
 const url = require("url");
 const ht_app_browser_not_supported_1 = require("@01ht/ht-app-browser-not-supported");
 const envConfig = firebase_functions_1.config();
@@ -44,7 +44,7 @@ function createApp(pwashell) {
             if (path === "/404")
                 res.status(404);
             if (botResult) {
-                const browser = await puppeteer_1.default.launch({ headless: true });
+                const browser = await puppeteer.launch({ headless: true });
                 const page = await browser.newPage();
                 const targetUrl = generateUrl(req);
                 targetUrl.replace("robots.txt", "");
