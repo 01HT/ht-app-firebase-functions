@@ -156,7 +156,7 @@ function createApp(pwashell) {
       const botResult = checkForBots(userAgent);
       const pathname = url.parse(req.url).pathname;
 
-      if (!botResult) {
+      if (botResult) {
         const result = await serialize(`${origin}${pathname}`);
         // res.set("Cache-Control", "public, max-age=300, s-maxage=600");
         // res.set("Vary", "User-Agent");
