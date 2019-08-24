@@ -55,12 +55,12 @@ function createApp(pwashell) {
                 const response = await page.goto(targetUrl, {
                     waitUntil: "domcontentloaded"
                 });
-                // await page.waitForSelector("h1");
+                await page.waitForSelector("h1");
                 await page.evaluate(() => {
                     const promise = new Promise(resolve => {
                         setTimeout(() => {
                             resolve();
-                        }, 25000);
+                        }, 5000);
                     });
                     return promise;
                 });
