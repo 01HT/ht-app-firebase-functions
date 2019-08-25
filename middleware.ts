@@ -71,7 +71,7 @@ async function serialize(requestUrl) {
    // Add webcomponentsjs library and set params for serialization webcomponents for make it readable for crawlers
   page.evaluateOnNewDocument(
     `var wcjsScript = document.createElement("script");
-    script.src = "/node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js";
+    wcjsScript.src = "/node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js";
     document.body.appendChild(wcjsScript);`
   );
   page.evaluateOnNewDocument("customElements.forcePolyfill = true");
