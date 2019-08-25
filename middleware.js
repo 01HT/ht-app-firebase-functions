@@ -58,12 +58,12 @@ async function serialize(requestUrl) {
     });
     const page = await browser.newPage();
     // Add webcomponentsjs library and set params for serialization webcomponents for make it readable for crawlers
-    page.evaluateOnNewDocument(`var wcjsScript = document.createElement("script");
-    wcjsScript.src = "/node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js";
-    document.body.appendChild(wcjsScript);`);
     page.evaluateOnNewDocument("customElements.forcePolyfill = true");
     page.evaluateOnNewDocument("ShadyDOM = {force: true}");
     page.evaluateOnNewDocument("ShadyCSS = {shimcssproperties: true}");
+    page.evaluateOnNewDocument(`var wcjsScript = document.createElement("script");
+    wcjsScript.src = "/node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js";
+    document.head.appendChild(wcjsScript);`);
     let response = null;
     // Capture main frame response. This is used in the case that rendering
     // times out, which results in puppeteer throwing an error. This allows us
