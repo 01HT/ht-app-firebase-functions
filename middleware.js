@@ -63,8 +63,7 @@ async function serialize(targetURL, pwashell) {
             body: htmlWitchInjection
         });
     });
-    await page.goto(targetURL);
-    await page.waitFor(10000);
+    await page.goto(targetURL, { waitUntil: "load" });
     let statusCode = 200;
     const newStatusCode = await page
         .$eval('meta[name="render:status_code"]', element => parseInt(element.getAttribute("content") || ""))
