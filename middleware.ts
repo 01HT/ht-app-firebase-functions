@@ -10,9 +10,7 @@ const envConfig = config();
 
 const appName = envConfig.app_config.name;
 const origin = envConfig.app_config.origin;
-const cloudinaryURL = `${envConfig.cloudinary.origin}/${
-  envConfig.cloudinary.cloud_name
-}`;
+const cloudinaryURL = `${envConfig.cloudinary.origin}/${envConfig.cloudinary.cloud_name}`;
 const svg = envConfig.app_config.logo.svg;
 const ico32 = envConfig.app_config.logo.ico32;
 const ico64 = envConfig.app_config.logo.ico64;
@@ -68,15 +66,19 @@ async function serialize(requestUrl) {
 
   const page = await browser.newPage();
 
-   // Add webcomponentsjs library and set params for serialization webcomponents for make it readable for crawlers
-  page.evaluateOnNewDocument("customElements.forcePolyfill = true");
-  page.evaluateOnNewDocument("ShadyDOM = {force: true}");
-  page.evaluateOnNewDocument("ShadyCSS = {shimcssproperties: true}");
-  page.evaluateOnNewDocument(
-    `var wcjsScript = document.createElement("script");
-    wcjsScript.src = "/node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js";
-    document.head.appendChild(wcjsScript);`
-  );
+  // Add webcomponentsjs library and set params for serialization webcomponents for make it readable for crawlers
+
+  await page.evaluateOnNewDocument(() => {
+    document.addEventListener("DOMContentLoaded", _ => {
+      window.customElements["forcePolyfill"] = true;
+      window["ShadyDOM"] = { force: true };
+      window["ShadyCSS"] = { shimcssproperties: true };
+      const script = document.createElement("script");
+      script.src =
+        "/node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js";
+      document.head.appendChild(script);
+    });
+  });
 
   let response = null;
   // Capture main frame response. This is used in the case that rendering
