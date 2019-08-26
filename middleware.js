@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const functions = require("firebase-functions");
 const firebase_functions_1 = require("firebase-functions");
 const express = require("express");
+const url = require("url");
 const puppeteer = require("puppeteer");
 const ht_app_browser_not_supported_1 = require("@01ht/ht-app-browser-not-supported");
 const envConfig = firebase_functions_1.config();
@@ -24,7 +25,7 @@ function isIE(userAgent) {
     return trident > 0 || msie > 0;
 }
 // https://github.com/GoogleChrome/rendertron/blob/master/src/renderer.ts
-async function serialize(pwashell) {
+async function serialize(targetURL, pwashell) {
     //  Injects a <base> tag which allows other resources to load. This has no effect on serialised output, but allows it to verify render quality.
     function injectBaseHref() {
         const base = document.createElement("base");
@@ -47,16 +48,23 @@ async function serialize(pwashell) {
         // args need for correct work in firebase functions
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });
-    const page = await browser.newPage();
-    // Add webcomponentsjs library and set params for serialization webcomponents for make it readable for crawlers
-    const htmlWitchInject = pwashell.replace("<head>", `<head>
+    const htmlWitchInjection = pwashell.replace("<head>", `<head>
     <script>
         customElements.forcePolyfill = true;
         ShadyDOM = {force: true};
         ShadyCSS = {shimcssproperties: true};
     </script>
     <script src="/node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js"></script>`);
-    await page.setContent(htmlWitchInject, { timeout: 30000, waitUntil: "load" });
+    const page = await browser.newPage();
+    await page.setRequestInterception(true);
+    // Add webcomponentsjs library and set params for serialization webcomponents for make it readable for crawlers
+    page.on("request", async (req) => {
+        req.respond({
+            body: htmlWitchInjection
+        });
+    });
+    await page.goto(targetURL);
+    await page.waitFor(10000);
     let statusCode = 200;
     const newStatusCode = await page
         .$eval('meta[name="render:status_code"]', element => parseInt(element.getAttribute("content") || ""))
@@ -69,7 +77,7 @@ async function serialize(pwashell) {
     await page.evaluate(injectBaseHref, `${origin}`);
     // Serialize page.
     const content = await page.evaluate("document.firstElementChild.outerHTML");
-    await page.close();
+    await browser.close();
     return { statusCode: statusCode, content: content };
 }
 function createApp(pwashell) {
@@ -78,8 +86,9 @@ function createApp(pwashell) {
         try {
             const userAgent = req.headers["user-agent"];
             const botResult = checkForBots(userAgent);
+            const path = url.parse(req.url).path;
             if (botResult) {
-                const result = await serialize(pwashell);
+                const result = await serialize(`${origin}${path}`, pwashell);
                 // res.set("Cache-Control", "public, max-age=300, s-maxage=600");
                 // res.set("Vary", "User-Agent");
                 res.status(result.statusCode);
