@@ -26,6 +26,13 @@ function isIE(userAgent) {
 }
 // https://github.com/GoogleChrome/rendertron/blob/master/src/renderer.ts
 async function serialize(targetURL, pwashell) {
+    function stripPage() {
+        // Strip only script tags that contain JavaScript (either no type attribute or one that contains "javascript")
+        const elements = document.querySelectorAll('script:not([type]), script[type*="javascript"], script[type*="module"], link[rel=import]');
+        for (const e of Array.from(elements)) {
+            e.remove();
+        }
+    }
     //  Injects a <base> tag which allows other resources to load. This has no effect on serialised output, but allows it to verify render quality.
     function injectBaseHref() {
         const base = document.createElement("base");
@@ -56,26 +63,33 @@ async function serialize(targetURL, pwashell) {
     </script>
     <script src="/node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js"></script>`);
     const page = await browser.newPage();
-    await page.setRequestInterception(true);
-    // Add webcomponentsjs library and set params for serialization webcomponents for make it readable for crawlers
-    page.on("request", async (req) => {
-        req.respond({
-            body: htmlWitchInjection
-        });
-    });
-    await page.goto(targetURL, { waitUntil: "load" });
-    let statusCode = 200;
-    const newStatusCode = await page
-        .$eval('meta[name="render:status_code"]', element => parseInt(element.getAttribute("content") || ""))
-        .catch(() => undefined);
-    // Original status codes which aren't 200 always return with that status
-    // code, regardless of meta tags.
-    if (newStatusCode)
-        statusCode = newStatusCode;
+    // Go to targetURL for fixing url in page
+    await page.goto(targetURL, { waitUntil: "domcontentloaded" });
+    // Replace dom by pwashell with injection
+    await page.setContent(htmlWitchInjection, { waitUntil: "load" });
+    // Remove script & import tags.
+    await page.evaluate(stripPage);
     // Inject <base> tag with the origin of the request (ie. no path).
     await page.evaluate(injectBaseHref, `${origin}`);
-    // Serialize page.
     const content = await page.evaluate("document.firstElementChild.outerHTML");
+    let statusCode = 200;
+    // Set status to the initial server's response code. Check for a <meta
+    // name="render:status_code" content="4xx" /> tag which overrides the status
+    // code.
+    const newStatusCode = await page.evaluate(() => {
+        try {
+            const meta = document.querySelector('meta[name="render:status_code"]');
+            if (meta) {
+                return parseInt(meta.getAttribute("content"));
+            }
+        }
+        catch (err) {
+            return false;
+        }
+        return false;
+    });
+    if (newStatusCode)
+        statusCode = newStatusCode;
     await browser.close();
     return { statusCode: statusCode, content: content };
 }
@@ -102,7 +116,7 @@ function createApp(pwashell) {
                     svg: svg
                 };
                 if (isIE(userAgent)) {
-                    res.send(res.send(ht_app_browser_not_supported_1.browserNotSupported(browserNotSupportedParams)));
+                    res.send(ht_app_browser_not_supported_1.browserNotSupported(browserNotSupportedParams));
                 }
                 else {
                     res.send(pwashell);
