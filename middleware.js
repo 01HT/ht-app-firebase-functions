@@ -67,6 +67,8 @@ async function serialize(targetURL, pwashell) {
     await page.goto(targetURL, { waitUntil: "domcontentloaded" });
     // Replace dom by pwashell with injection
     await page.setContent(htmlWitchInjection, { waitUntil: "load" });
+    // Wait rendering page
+    await page.waitFor(10000);
     // Remove script & import tags.
     await page.evaluate(stripPage);
     // Inject <base> tag with the origin of the request (ie. no path).
