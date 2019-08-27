@@ -55,20 +55,13 @@ async function serialize(targetURL, pwashell) {
         // args need for correct work in firebase functions
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });
-    const htmlWitchInjection = pwashell.replace("<head>", `<head>
-    <script>
-        customElements.forcePolyfill = true;
-        ShadyDOM = {force: true};
-        ShadyCSS = {shimcssproperties: true};
-    </script>
-    <script src="/node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js"></script>`);
     const page = await browser.newPage();
+    page.evaluateOnNewDocument("customElements.forcePolyfill = true");
+    page.evaluateOnNewDocument("ShadyDOM = {force: true}");
+    page.evaluateOnNewDocument("ShadyCSS = {shimcssproperties: true}");
     // Go to targetURL for fixing url in page
-    await page.goto(targetURL, { waitUntil: "domcontentloaded" });
-    // Replace dom by pwashell with injection
-    await page.setContent(htmlWitchInjection, { waitUntil: "load" });
-    // Wait rendering page
-    await page.waitFor(10000);
+    await page.goto(targetURL, { waitUntil: "load" });
+    //  await page.waitFor(10000);
     // Remove script & import tags.
     await page.evaluate(stripPage);
     // Inject <base> tag with the origin of the request (ie. no path).

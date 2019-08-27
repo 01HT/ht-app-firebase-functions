@@ -29,80 +29,73 @@ function isIE(userAgent) {
 
 // https://github.com/GoogleChrome/rendertron/blob/master/src/renderer.ts
 async function serialize(targetURL, pwashell) {
- function stripPage() {
-   // Strip only script tags that contain JavaScript (either no type attribute or one that contains "javascript")
-   const elements = document.querySelectorAll(
-     'script:not([type]), script[type*="javascript"], script[type*="module"], link[rel=import]'
-   );
-   for (const e of Array.from(elements)) {
-     e.remove();
-   }
- }
+  function stripPage() {
+    // Strip only script tags that contain JavaScript (either no type attribute or one that contains "javascript")
+    const elements = document.querySelectorAll(
+      'script:not([type]), script[type*="javascript"], script[type*="module"], link[rel=import]'
+    );
+    for (const e of Array.from(elements)) {
+      e.remove();
+    }
+  }
 
- //  Injects a <base> tag which allows other resources to load. This has no effect on serialised output, but allows it to verify render quality.
- function injectBaseHref() {
-   const base = document.createElement("base");
-   base.setAttribute("href", origin);
-   const bases = document.head.querySelectorAll("base");
-   if (bases.length) {
-     // Patch existing <base> if it is relative.
-     const existingBase = bases[0].getAttribute("href") || "";
-     if (existingBase.startsWith("/")) {
-       bases[0].setAttribute("href", origin + existingBase);
-     }
-   } else {
-     // Only inject <base> if it doesn't already exist.
-     document.head.insertAdjacentElement("afterbegin", base);
-   }
- }
- const browser = await puppeteer.launch({
-   headless: true,
-   // args need for correct work in firebase functions
-   args: ["--no-sandbox", "--disable-setuid-sandbox"]
- });
- const htmlWitchInjection = pwashell.replace(
-   "<head>",
-   `<head>
-    <script>
-        customElements.forcePolyfill = true;
-        ShadyDOM = {force: true};
-        ShadyCSS = {shimcssproperties: true};
-    </script>
-    <script src="/node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js"></script>`
- );
- const page = await browser.newPage();
+  //  Injects a <base> tag which allows other resources to load. This has no effect on serialised output, but allows it to verify render quality.
+  function injectBaseHref() {
+    const base = document.createElement("base");
+    base.setAttribute("href", origin);
+    const bases = document.head.querySelectorAll("base");
+    if (bases.length) {
+      // Patch existing <base> if it is relative.
+      const existingBase = bases[0].getAttribute("href") || "";
+      if (existingBase.startsWith("/")) {
+        bases[0].setAttribute("href", origin + existingBase);
+      }
+    } else {
+      // Only inject <base> if it doesn't already exist.
+      document.head.insertAdjacentElement("afterbegin", base);
+    }
+  }
+  const browser = await puppeteer.launch({
+    headless: true,
+    // args need for correct work in firebase functions
+    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+  });
 
- // Go to targetURL for fixing url in page
- await page.goto(targetURL, { waitUntil: "domcontentloaded" });
- // Replace dom by pwashell with injection
- await page.setContent(htmlWitchInjection, { waitUntil: "load" });
- // Wait rendering page
- await page.waitFor(10000);
- // Remove script & import tags.
- await page.evaluate(stripPage);
- // Inject <base> tag with the origin of the request (ie. no path).
- await page.evaluate(injectBaseHref, `${origin}`);
- const content = await page.evaluate("document.firstElementChild.outerHTML");
+  const page = await browser.newPage();
 
- let statusCode = 200;
- // Set status to the initial server's response code. Check for a <meta
- // name="render:status_code" content="4xx" /> tag which overrides the status
- // code.
- const newStatusCode = await page.evaluate(() => {
-   try {
-     const meta = document.querySelector('meta[name="render:status_code"]');
-     if (meta) {
-       return parseInt(meta.getAttribute("content"));
-     }
-   } catch (err) {
-     return false;
-   }
-   return false;
- });
- if (newStatusCode) statusCode = newStatusCode;
+  page.evaluateOnNewDocument("customElements.forcePolyfill = true");
+  page.evaluateOnNewDocument("ShadyDOM = {force: true}");
+  page.evaluateOnNewDocument("ShadyCSS = {shimcssproperties: true}");
 
- await browser.close();
- return { statusCode: statusCode, content: content };
+  // Go to targetURL for fixing url in page
+  await page.goto(targetURL, { waitUntil: "load" });
+  
+  //  await page.waitFor(10000);
+  // Remove script & import tags.
+  await page.evaluate(stripPage);
+  // Inject <base> tag with the origin of the request (ie. no path).
+  await page.evaluate(injectBaseHref, `${origin}`);
+  const content = await page.evaluate("document.firstElementChild.outerHTML");
+
+  let statusCode = 200;
+  // Set status to the initial server's response code. Check for a <meta
+  // name="render:status_code" content="4xx" /> tag which overrides the status
+  // code.
+  const newStatusCode = await page.evaluate(() => {
+    try {
+      const meta = document.querySelector('meta[name="render:status_code"]');
+      if (meta) {
+        return parseInt(meta.getAttribute("content"));
+      }
+    } catch (err) {
+      return false;
+    }
+    return false;
+  });
+  if (newStatusCode) statusCode = newStatusCode;
+
+  await browser.close();
+  return { statusCode: statusCode, content: content };
 }
 
 function createApp(pwashell) {
