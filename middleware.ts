@@ -69,8 +69,8 @@ async function serialize(targetURL, pwashell) {
 
   // Go to targetURL for fixing url in page
   await page.goto(targetURL, { waitUntil: "load" });
-  
-  //  await page.waitFor(10000);
+  // Wait some time for fetching data
+  await page.waitFor(5000);
   // Remove script & import tags.
   await page.evaluate(stripPage);
   // Inject <base> tag with the origin of the request (ie. no path).
