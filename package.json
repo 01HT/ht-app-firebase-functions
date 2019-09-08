@@ -6,9 +6,10 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@01ht/ht-app-browser-not-supported": "github:01ht/ht-app-browser-not-supported",
+    "@types/node": "^8.10.53",
     "express": "^4.17.1",
-    "url": "^0.11.0",
-    "puppeteer": "^1.19.0"
+    "puppeteer": "^1.19.0",
+    "url": "^0.11.0"
   },
   "devDependencies": {
     "tslint": "^5.17.0",

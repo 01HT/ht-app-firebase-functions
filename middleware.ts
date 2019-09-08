@@ -68,7 +68,12 @@ async function serialize(targetURL, pwashell) {
   page.evaluateOnNewDocument("ShadyCSS = {shimcssproperties: true}");
 
   // Go to targetURL for fixing url in page
-  await page.goto(targetURL, { waitUntil: "load" });
+  try {
+    await page.goto(targetURL, { waitUntil: "load" });
+  } catch(err) {
+    // Try again for fix firebase "cold start" problems
+    await page.goto(targetURL, { waitUntil: "load" });
+  }
   // Wait some time for fetching data
   await page.waitFor(5000);
   // Remove script & import tags.
